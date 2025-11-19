@@ -1,0 +1,7 @@
+input=best_l.pt
+output=best_l.pt.enc
+size_plain=55876186
+sha256_plain=24d11e9d34aa4aa7395d64c9232dee4e90e8236222483e84c4d9c7775cfe4f6b
+kdf=scrypt N=32768 r=8 p=1
+cipher=AES-256-GCM
+format=magic|salt|nonce|ciphertext|tag
