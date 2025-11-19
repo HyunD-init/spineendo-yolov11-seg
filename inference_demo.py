@@ -5,15 +5,23 @@ from pathlib import Path
 from weights.loader import load_yolov11_model
 
 
+# Available YOLOv11 variants used in this repository.
+# The larger YOLOv11-X model is not included here because the corresponding
+# weight file exceeds the public GitHub file size limit. It can be shared
+# separately upon reasonable request to the corresponding authors.
 VARIANTS = ["n", "s", "m", "l"]
-# 허용할 이미지 확장자들
+
+# Supported image file extensions for test images.
 ALLOWED_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 
 
 def find_test_image(project_root: Path, test_id: int) -> Path:
     """
-    test_images 폴더에서 test_<id>.* 형태의 이미지를 찾는다.
-    확장자는 ALLOWED_EXTS 중 하나.
+    Locate a test image named `test_<id>.<ext>` inside the `test_images` folder.
+
+    The function searches for files whose stem matches `test_<id>` and whose
+    extension is one of ALLOWED_EXTS. If multiple files share the same stem
+    with different extensions, the first one in sorted order is used.
     """
     test_dir = project_root / "test_images"
     if not test_dir.exists():
@@ -21,14 +29,16 @@ def find_test_image(project_root: Path, test_id: int) -> Path:
 
     prefix = f"test_{test_id}"
     candidates = [
-        p for p in test_dir.iterdir()
+        p
+        for p in test_dir.iterdir()
         if p.is_file()
         and p.stem == prefix
         and p.suffix.lower() in ALLOWED_EXTS
     ]
 
     if not candidates:
-        # prefix만 맞는 파일이 있는지 한 번 더 확인해서 디버깅 도움
+        # If files with the correct stem exist but use unsupported extensions,
+        # raise a more informative error to help debugging.
         raw_candidates = [p for p in test_dir.iterdir() if p.is_file() and p.stem == prefix]
         if raw_candidates:
             raise FileNotFoundError(
@@ -40,39 +50,44 @@ def find_test_image(project_root: Path, test_id: int) -> Path:
             f"Supported extensions: {', '.join(sorted(ALLOWED_EXTS))}"
         )
 
-    # 같은 이름으로 여러 확장자가 있어도 첫 번째 하나만 사용
+    # If multiple candidates exist (e.g., test_1.jpg and test_1.png),
+    # use the first one in lexicographic order to keep the behavior deterministic.
     return sorted(candidates)[0]
 
 
 def run_inference(test_id: int, device: str = "cuda"):
     """
-    단일 테스트 이미지(test_<id>.*)에 대해
-    YOLOv11 모델 variant 별로 추론을 수행하고,
-    results/test_<id>_<variant>.<ext> 에 결과 이미지를 저장.
+    Run inference for all available YOLOv11 variants on a single test image.
+
+    For an input image `test_<id>.<ext>` in `test_images/`,
+    this function runs each model variant in VARIANTS and saves the
+    visualization outputs to:
+
+        results/test_<id>_<variant>.<ext>
     """
     project_root = Path(__file__).resolve().parent
 
-    # 입력 이미지 찾기
+    # Locate the input test image.
     image_path = find_test_image(project_root, test_id)
     print(f"Input image: {image_path}")
 
-    # 결과 저장 루트
+    # Output directory for result images.
     results_root = project_root / "results"
     results_root.mkdir(parents=True, exist_ok=True)
 
     for v in VARIANTS:
-        print(f"\n[Variant {v}] Loading encrypted model...")
+        print(f"\n[Variant {v}] Loading model...")
         model = load_yolov11_model(variant=v, device=device)
         print(f"[Variant {v}] Model loaded. Running inference...")
 
-        # 저장 파일 이름: test_<id>_<variant>.<원본확장자>
+        # Output file name: test_<id>_<variant>.<original_extension>
         save_name = f"test_{test_id}_{v}{image_path.suffix}"
         save_path = results_root / save_name
 
-        # YOLO 추론
+        # Run YOLO inference.
         results = model(str(image_path))
 
-        # segmentation mask가 그려진 이미지를 저장
+        # Save the image with segmentation masks overlaid.
         results[0].plot(
             save=True,
             filename=str(save_path),
@@ -96,13 +111,13 @@ def main():
         "--test_id",
         type=int,
         default=1,
-        help="Test image index (1~4). Uses test_images/test_<id>.<ext> (default: 1)",
+        help="Test image index (1–4). Uses test_images/test_<id>.<ext> (default: 1).",
     )
     parser.add_argument(
         "--device",
         type=str,
         default="cuda",
-        help="Device for inference: 'cuda' or 'cpu' (default: cuda)",
+        help="Device for inference: 'cuda' or 'cpu' (default: 'cuda').",
     )
 
     args = parser.parse_args()
