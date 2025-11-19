@@ -6,10 +6,11 @@ Official inference demo for:
 > **Real-time instance segmentation of spine endoscopy images using a YOLO-v11 deep convolutional neural network**.  
 > *PLOS ONE*, 2025. (in press)
 
-<div style="display: flex; justify-content: center; gap: 20px;">
+<p align="center">
   <img src="image1.jpg" width="350">
   <img src="image2.png" width="350">
-</div>
+</p>
+
 
 
 This repository provides an inference pipeline for running the proposed
