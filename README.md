@@ -1,9 +1,9 @@
-# SpineEndo-YOLOv11-Seg
+# SpineEndo-YOLO-V11-Seg
 
 Official inference demo for:
 
 > Jung HJ, Nam NE, Lee C, et al.  
-> **Real-time instance segmentation of spine endoscopy images using a YOLO-v11 deep convolutional neural network**.  
+> **Real-time instance segmentation of spine endoscopy images using a YOLO-V11 deep convolutional neural network**.  
 > *PLOS ONE*, 2025. (in press)
 
 <p align="center">
@@ -14,7 +14,7 @@ Official inference demo for:
 
 
 This repository provides an inference pipeline for running the proposed
-YOLOv11-based instance segmentation models on sample spine endoscopy images
+YOLO-V11-based instance segmentation models on sample spine endoscopy images
 or user-provided images.
 
 The full clinical dataset cannot be shared publicly due to patient privacy and
@@ -39,7 +39,7 @@ spineendo-yolov11-seg/
     ├── __init__.py
     ├── __pycache__/
     │   └── loader.cpython-312.pyc   # Compiled loader for the model weights
-    ├── best_n.pt.enc                # Packaged YOLOv11-N weights
+    ├── best_n.pt.enc                
     ├── best_n.pt.enc.meta.txt
     ├── best_s.pt.enc
     ├── best_s.pt.enc.meta.txt
@@ -47,7 +47,7 @@ spineendo-yolov11-seg/
     ├── best_m.pt.enc.meta.txt
     ├── best_l.pt.enc
     ├── best_l.pt.enc.meta.txt
-    # The YOLOv11-X weights are not hosted here due to GitHub file size limits.
+    # The YOLO-V11 x weights are not hosted here due to GitHub file size limits.
     # They can be shared separately upon reasonable request to the
     # corresponding authors of the paper.
 ````
@@ -90,7 +90,7 @@ The script `inference_demo.py` runs the YOLOv11 variants
 (`n`, `s`, `m`, `l`) on a single test image and saves the
 outputs into the `results/` directory.
 
-> The larger YOLOv11-X model is not included here because its weight file
+> The larger YOLO-V11 x model is not included here because its weight file
 > exceeds the public GitHub file size limit. It can be shared separately
 > upon reasonable request to the corresponding authors.
 
@@ -133,7 +133,7 @@ After the script finishes, you will find files like:
 * `results/test_1_l.jpg`
 
 Each image shows the instance segmentation masks produced by the
-corresponding YOLOv11 variant.
+corresponding YOLO-V11 variant.
 
 ### Choose a different test image
 
@@ -176,18 +176,18 @@ hardware configuration.
 
 ## Reproducibility and custom training
 
-Our models are based on the standard YOLOv11 segmentation architecture
+Our models are based on the standard YOLO-V11 segmentation architecture
 (“YOLOv11-seg”) implemented in the Ultralytics YOLO framework.
 
 * **Reproducing or adapting training on custom datasets**
-  Researchers who wish to train or fine-tune YOLOv11-seg models on their own
-  datasets can do so using the official Ultralytics YOLOv11 segmentation
-  implementation and documentation (e.g., by downloading the YOLOv11-seg
+  Researchers who wish to train or fine-tune YOLO-V11-seg models on their own
+  datasets can do so using the official Ultralytics YOLO-V11 segmentation
+  implementation and documentation (e.g., by downloading the YOLO-V11-seg
   model from the official website and following the standard training
   procedures on a custom dataset with segmentation masks).
 
   The network architecture and training strategy used in this study follow
-  standard YOLOv11-seg practices, as described in the Methods section of
+  standard YOLO-V11-seg practices, as described in the Methods section of
   the paper. Therefore, training a YOLOv11-seg model on a similarly prepared
   dataset should yield comparable behavior and allow independent validation
   of the approach.
@@ -213,28 +213,6 @@ reproducibility of the main findings.
 
 ---
 
-## Model weights and loader
-
-* The trained YOLOv11 weights (`best_*.pt.enc`) are provided in a protected
-  format and are loaded through the compiled loader
-  (`weights/__pycache__/loader.cpython-312.pyc`).
-* The loader:
-
-  * reads the corresponding `best_*.pt.enc` file,
-  * verifies integrity using the accompanying `.meta.txt` file,
-  * and loads the model into the Ultralytics YOLO framework.
-
-For security and intellectual property reasons, the original `loader.py`
-source code and the raw uncompressed `.pt` weight files are not distributed.
-Users can, however, run inference and reproduce the main segmentation results
-using the provided scripts and packaged models.
-
-> Due to GitHub file size limitations, the YOLOv11-X weights are not hosted
-> directly in this repository. They can be shared separately upon reasonable
-> request to the corresponding authors of the paper.
-
----
-
 ## Data availability
 
 The original clinical videos used in the study contain potentially identifiable
@@ -244,7 +222,7 @@ restrictions.
 This repository provides:
 
 * a small de-identified subset of sample frames in `test_images/`, and
-* trained YOLOv11 models in a packaged format that can be used with the
+* trained YOLO-V11 models in a packaged format that can be used with the
   provided inference scripts.
 
 Access to the full dataset may be requested from the corresponding institution’s
@@ -259,7 +237,7 @@ If you use this code or these models in your research, please cite:
 
 ```text
 Jung HJ, Nam NE, Lee C, et al.
-Real-time instance segmentation of spine endoscopy images using a YOLO-v11
+Real-time instance segmentation of spine endoscopy images using a YOLO-V11
 deep convolutional neural network. PLOS ONE. 2025.
 ```
 
