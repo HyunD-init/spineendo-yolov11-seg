@@ -27,6 +27,7 @@ with the provided scripts.
 ## Repository structure
 
 ```text
+
 spineendo-yolov11-seg/
 ├── inference_demo.py        # Main script for running inference
 ├── requirements.txt         # Python dependencies
@@ -37,8 +38,7 @@ spineendo-yolov11-seg/
 │   └── test_4.jpg
 └── weights/
     ├── __init__.py
-    ├── __pycache__/
-    │   └── loader.cpython-312.pyc   # Compiled loader for the model weights
+    ├── loader.pyc           
     ├── best_n.pt.enc                
     ├── best_n.pt.enc.meta.txt
     ├── best_s.pt.enc
@@ -50,6 +50,7 @@ spineendo-yolov11-seg/
     # The YOLO-V11 x weights are not hosted here due to GitHub file size limits.
     # They can be shared separately upon reasonable request to the
     # corresponding authors of the paper.
+
 ````
 
 
