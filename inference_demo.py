@@ -1,18 +1,39 @@
 # inference_demo.py
 import argparse
 from pathlib import Path
-
-from weights.loader import load_yolov11_model
+import importlib.machinery
+import importlib.util
 
 
 # Available YOLOv11 variants used in this repository.
 # The larger YOLOv11-X model is not included here because the corresponding
 # weight file exceeds the public GitHub file size limit. It can be shared
 # separately upon reasonable request to the corresponding authors.
+
+
 VARIANTS = ["n", "s", "m", "l"]
 
 # Supported image file extensions for test images.
 ALLOWED_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+
+
+def load_loader_module():
+ 
+ 
+    project_root = Path(__file__).resolve().parent
+    pyc_path = project_root / "weights" / "loader.pyc"
+
+    if not pyc_path.exists():
+        raise FileNotFoundError(f"Compiled loader not found: {pyc_path}")
+
+    module_name = "weights.loader"
+    loader = importlib.machinery.SourcelessFileLoader(module_name, str(pyc_path))
+    spec = importlib.util.spec_from_loader(module_name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
 
 
 def find_test_image(project_root: Path, test_id: int) -> Path:
@@ -66,6 +87,7 @@ def run_inference(test_id: int, device: str = "cuda"):
         results/test_<id>_<variant>.<ext>
     """
     project_root = Path(__file__).resolve().parent
+    loader_module = load_loader_module()
 
     # Locate the input test image.
     image_path = find_test_image(project_root, test_id)
@@ -77,7 +99,7 @@ def run_inference(test_id: int, device: str = "cuda"):
 
     for v in VARIANTS:
         print(f"\n[Variant {v}] Loading model...")
-        model = load_yolov11_model(variant=v, device=device)
+        model = loader_module.load_yolov11_model(variant=v, device=device)
         print(f"[Variant {v}] Model loaded. Running inference...")
 
         # Output file name: test_<id>_<variant>.<original_extension>
