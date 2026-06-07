@@ -1,7 +1,7 @@
 input=best_s.pt
 output=best_s.pt.enc
-size_plain=20543901
-sha256_plain=5ef4a21f251c60a618107b9d9194f7efad1af755ffb4b557601a147301fe584b
+size_plain=20537316
+sha256_plain=be58667c75404f0bea2c1ce95ced7e0d78efe7b94835bbfafdceae3bd93407dd
 kdf=scrypt N=32768 r=8 p=1
 cipher=AES-256-GCM
 format=magic|salt|nonce|ciphertext|tag

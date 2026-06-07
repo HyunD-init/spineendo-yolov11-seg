@@ -1,7 +1,7 @@
 input=best_n.pt
 output=best_n.pt.enc
-size_plain=6031645
-sha256_plain=a4aa51c00a9e14b779f2d517836b861f1babcb3218a63d63af8637c1eacda345
+size_plain=6030628
+sha256_plain=0b962f0a96360c44f049fb430b8bfd1eba4747c2fb5e5e3cd601ddb77f7d2605
 kdf=scrypt N=32768 r=8 p=1
 cipher=AES-256-GCM
 format=magic|salt|nonce|ciphertext|tag

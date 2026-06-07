@@ -1,31 +1,48 @@
-# inference_demo.py
+"""
+SpineEndo-YOLOv11 — real-time instance segmentation inference.
+
+Run the released spine-endoscopy YOLO-V11 segmentation models on the bundled
+demo frames, or on YOUR OWN spine-endoscopy images or video.
+
+Examples
+--------
+# 1) Bundled demo frame (variant l):
+python inference_demo.py
+
+# 2) Your own image:
+python inference_demo.py --source path/to/your_frame.jpg
+
+# 3) Your own endoscopy VIDEO (an annotated video is written to results/):
+python inference_demo.py --source path/to/your_video.mp4
+
+# 4) A folder of images:
+python inference_demo.py --source path/to/folder
+
+# 5) A specific variant, or all variants, on CPU:
+python inference_demo.py --source your_video.mp4 --variant m --device cpu
+python inference_demo.py --source your_video.mp4 --variant all
+
+Model weights for variants n, s, m, l are provided in `weights/` and are loaded
+automatically by the bundled loader. The larger YOLO-V11 x model exceeds GitHub's
+file-size limit and can be requested from the corresponding author.
+"""
+
 import argparse
 from pathlib import Path
 import importlib.machinery
 import importlib.util
 
-
-# Available YOLOv11 variants used in this repository.
-# The larger YOLOv11-X model is not included here because the corresponding
-# weight file exceeds the public GitHub file size limit. It can be shared
-# separately upon reasonable request to the corresponding authors.
-
-
 VARIANTS = ["n", "s", "m", "l"]
-
-# Supported image file extensions for test images.
-ALLOWED_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".m4v"}
 
 
 def load_loader_module():
- 
- 
+    """Load the compiled loader (weights/loader.pyc) that prepares the models."""
     project_root = Path(__file__).resolve().parent
     pyc_path = project_root / "weights" / "loader.pyc"
-
     if not pyc_path.exists():
         raise FileNotFoundError(f"Compiled loader not found: {pyc_path}")
-
     module_name = "weights.loader"
     loader = importlib.machinery.SourcelessFileLoader(module_name, str(pyc_path))
     spec = importlib.util.spec_from_loader(module_name, loader)
@@ -34,120 +51,99 @@ def load_loader_module():
     return module
 
 
-
-
-def find_test_image(project_root: Path, test_id: int) -> Path:
-    """
-    Locate a test image named `test_<id>.<ext>` inside the `test_images` folder.
-
-    The function searches for files whose stem matches `test_<id>` and whose
-    extension is one of ALLOWED_EXTS. If multiple files share the same stem
-    with different extensions, the first one in sorted order is used.
-    """
+def resolve_source(project_root: Path, source: str, test_id: int) -> str:
+    """Return the inference source: user-provided path, or a bundled demo frame."""
+    if source:
+        p = Path(source)
+        if not p.exists():
+            raise FileNotFoundError(f"--source not found: {p}")
+        return str(p)
+    # Fall back to a bundled demo image: test_images/test_<id>.<ext>
     test_dir = project_root / "test_images"
     if not test_dir.exists():
         raise FileNotFoundError(f"test_images directory not found: {test_dir}")
-
-    prefix = f"test_{test_id}"
-    candidates = [
-        p
-        for p in test_dir.iterdir()
-        if p.is_file()
-        and p.stem == prefix
-        and p.suffix.lower() in ALLOWED_EXTS
-    ]
-
-    if not candidates:
-        # If files with the correct stem exist but use unsupported extensions,
-        # raise a more informative error to help debugging.
-        raw_candidates = [p for p in test_dir.iterdir() if p.is_file() and p.stem == prefix]
-        if raw_candidates:
-            raise FileNotFoundError(
-                f"Found files with name '{prefix}' but unsupported extension. "
-                f"Supported: {', '.join(sorted(ALLOWED_EXTS))}"
-            )
+    cands = sorted(
+        p for p in test_dir.iterdir()
+        if p.is_file() and p.stem == f"test_{test_id}" and p.suffix.lower() in IMAGE_EXTS
+    )
+    if not cands:
         raise FileNotFoundError(
-            f"No image found for pattern '{prefix}.<ext>' in {test_dir}. "
-            f"Supported extensions: {', '.join(sorted(ALLOWED_EXTS))}"
+            f"No demo image 'test_{test_id}.<ext>' in {test_dir}. "
+            f"Provide your own input with --source instead."
         )
-
-    # If multiple candidates exist (e.g., test_1.jpg and test_1.png),
-    # use the first one in lexicographic order to keep the behavior deterministic.
-    return sorted(candidates)[0]
+    return str(cands[0])
 
 
-def run_inference(test_id: int, device: str = "cuda"):
-    """
-    Run inference for all available YOLOv11 variants on a single test image.
-
-    For an input image `test_<id>.<ext>` in `test_images/`,
-    this function runs each model variant in VARIANTS and saves the
-    visualization outputs to:
-
-        results/test_<id>_<variant>.<ext>
-    """
+def run(source: str, variants, device: str, conf: float):
+    """Run inference for the selected variant(s) on `source` (image / video / folder)."""
     project_root = Path(__file__).resolve().parent
     loader_module = load_loader_module()
-
-    # Locate the input test image.
-    image_path = find_test_image(project_root, test_id)
-    print(f"Input image: {image_path}")
-
-    # Output directory for result images.
     results_root = project_root / "results"
-    results_root.mkdir(parents=True, exist_ok=True)
 
-    for v in VARIANTS:
-        print(f"\n[Variant {v}] Loading model...")
+    for v in variants:
+        print(f"\n[Variant {v}] Loading model ...")
         model = loader_module.load_yolov11_model(variant=v, device=device)
-        print(f"[Variant {v}] Model loaded. Running inference...")
-
-        # Output file name: test_<id>_<variant>.<original_extension>
-        save_name = f"test_{test_id}_{v}{image_path.suffix}"
-        save_path = results_root / save_name
-
-        # Run YOLO inference.
-        results = model(str(image_path))
-
-        # Save the image with segmentation masks overlaid.
-        results[0].plot(
+        print(f"[Variant {v}] Running inference on: {source}")
+        # Ultralytics handles images, folders, and videos natively.
+        # For a video input, an annotated video is written automatically.
+        model.predict(
+            source=source,
+            device=device,
+            conf=conf,
             save=True,
-            filename=str(save_path),
-            line_width=0,
-            font_size=2,
-            boxes=True,
-            conf=False,
-            probs=False,
+            project=str(results_root),
+            name=v,
+            exist_ok=True,
+            line_width=2,
+            show_conf=False,
+            show_boxes=True,
+            verbose=True,
         )
+        print(f"[Variant {v}] Output saved to: {results_root / v}")
 
-        print(f"[Variant {v}] Saved output to: {save_path}")
-
-    print("\nAll variants finished. Check the 'results' folder.")
+    print("\nDone. Annotated results (images or video) are in the 'results/' folder.")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="SpineEndo-YOLOv11: run all model variants on a test image."
+        description=("SpineEndo-YOLOv11: real-time instance segmentation on your own "
+                     "spine-endoscopy images or video.")
     )
     parser.add_argument(
-        "--test_id",
-        type=int,
-        default=1,
-        help="Test image index (1–4). Uses test_images/test_<id>.<ext> (default: 1).",
+        "--source", type=str, default=None,
+        help=("Path to YOUR image, video, or a folder of images "
+              "(images: .jpg/.png/.tif ...; videos: .mp4/.avi/.mov ...). "
+              "If omitted, a bundled demo frame is used."),
     )
     parser.add_argument(
-        "--device",
-        type=str,
-        default="cuda",
-        help="Device for inference: 'cuda' or 'cpu' (default: 'cuda').",
+        "--variant", type=str, default="l",
+        help="Model variant: n, s, m, l, or 'all' (default: l).",
     )
-
+    parser.add_argument(
+        "--device", type=str, default="cuda",
+        help="'cuda' or 'cpu' (default: cuda).",
+    )
+    parser.add_argument(
+        "--conf", type=float, default=0.25,
+        help="Confidence threshold (default: 0.25).",
+    )
+    parser.add_argument(
+        "--test_id", type=int, default=1,
+        help="Index of the bundled demo image when --source is not given (1-4, default: 1).",
+    )
     args = parser.parse_args()
 
-    if not 1 <= args.test_id <= 4:
-        raise ValueError("test_id must be between 1 and 4 (inclusive).")
+    variant = args.variant.lower()
+    if variant == "all":
+        variants = VARIANTS
+    elif variant in VARIANTS:
+        variants = [variant]
+    else:
+        raise ValueError(f"--variant must be one of {VARIANTS} or 'all'.")
 
-    run_inference(test_id=args.test_id, device=args.device)
+    project_root = Path(__file__).resolve().parent
+    source = resolve_source(project_root, args.source, args.test_id)
+    run(source, variants, args.device, args.conf)
 
 
 if __name__ == "__main__":
